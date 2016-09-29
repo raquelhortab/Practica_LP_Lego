@@ -115,9 +115,69 @@ int main() {
 }
 >>
 
+//GRAMÀTICA
 #lexclass START
-//...
+
+#token NUM "[0-9]+"
+#token ID "[a-zA-Z0-9]+"
+
+#token GRID "\Grid"
+
+#token MOVE "\MOVE"
+#token PUSH "\PUSH"
+#token PLACE "\PLACE"
+#token AT "\AT"
+
+#token NORTH "\NORTH"
+#token SOUTH "\SOUTH"
+#token EAST "\EAST"
+#token WEST "\WEST"
+
+#token WHILE "\WHILE"
+#token FITS "\FITS"
+#token HEIGHT "\HEIGHT"
+#token AND "\AND"
+#token LESS "\<"
+#token MORE "\>"
+#token EQ "\="
+
+#token DOT "\."
+#token LP "\("
+#token RP "\)"
+#token EQ "\="
+#token LC "\["
+#token RC "\]"
+
+#token BLOC "\B"
+
+#token DEF "\DEF"
+#token ENDEF "\ENDEF"
+
 #token SPACE "[\ \n]" << zzskip();>>
 
-lego: grid ops defs <<#0=createASTlist(_sibling);>>;
+
+grid: GRID^ NUM NUM;
+bloc: BLOC NUM;
+pos: LP NUM DOT NUM RL;
+dir: NORTH|SOUTH|EAST|WEST;
+
+place: bloc EQ^ PLACE pos^ AT! pos^;
+move: MOVE^ bloc dir NUM;
+pp: (pos|bloc) (PUSH|POP);
+instr: bloc EQ^ pp+ bloc;
+
+ops: (grid|place|instr|move|heigh|ID)+;
+
+height: HEIGHT LP bloc RP;
+fits: FITS LP bloc DOT NUM DOT NUM DOT NUM RP; //FITS(B2.x.y.nivell)
+
+cond: height|fits;
+bucle: WHILE LP cond RP LC ops RC;
+
+
+def: DEF ID (bucle|ops)+ ENDEF;
+defs: def*;
+
+
+lego: grid^ ops^ defs^ <<#0=createASTlist(_sibling);>>;
 //....
