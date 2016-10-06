@@ -140,7 +140,7 @@ int main() {
 #token MORE "\>"
 #token EQ "\="
 
-#token DOT "\."
+#token DOT "\,"
 #token LP "\("
 #token RP "\)"
 #token LC "\["
@@ -155,24 +155,24 @@ int main() {
 #token SPACE "[\ \n]" << zzskip();>>
 
 
-grid: GRID NUM NUM;
+grid: GRID^ NUM NUM;
 
-pos: LP! NUM DOT! NUM RL!;
+pos: LP! NUM DOT! NUM RP! <<#0=createASTlist(_sibling);>>;
 dir: NORTH|SOUTH|EAST|WEST;
-
-ids: ID ( EQ  ((PLACE pos AT! pos) | bloc) |  );
+place: (PLACE^ pos AT pos);
+ids: ID ( EQ^  ( place | bloc) |  ) ;
 move: MOVE^ ID dir NUM;
 
-bloc: (ID|pos) ((PUSH|POP) bloc| );
+bloc: (ID|pos) ((PUSH^|POP^) bloc| );
 
-ops: (ids|move|height|bucle)*;
+ops: (ids|move|height|bucle)* <<#0=createASTlist(_sibling);>>;
 
-height: HEIGHT LP ID RP;
-fits: FITS LP ID DOT NUM DOT NUM DOT NUM RP;
+height: HEIGHT LP! ID RP!;
+fits: FITS^ LP! ID DOT! NUM DOT! NUM DOT! NUM RP!;
+cond: fits|height;
+bucle: WHILE^ LP! cond RP! LC! ops RC!;
 
-bucle: WHILE LP fits RP LC ops RC;
-
-def: DEF ID ops ENDEF;
+def: DEF^ ID ops ENDEF;
 defs: (def)*;
 
 lego: grid ops defs <<#0=createASTlist(_sibling);>>;
