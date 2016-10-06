@@ -119,24 +119,23 @@ int main() {
 #lexclass START
 
 #token NUM "[0-9]+"
-#token ID "[a-zA-Z0-9]+"
 
-#token GRID "\Grid"
+#token GRID "Grid"
 
-#token MOVE "\MOVE"
-#token PUSH "\PUSH"
-#token PLACE "\PLACE"
-#token AT "\AT"
+#token MOVE "MOVE"
+#token PUSH "PUSH"
+#token PLACE "PLACE"
+#token AT "AT"
 
-#token NORTH "\NORTH"
-#token SOUTH "\SOUTH"
-#token EAST "\EAST"
-#token WEST "\WEST"
+#token NORTH "NORTH"
+#token SOUTH "SOUTH"
+#token EAST "EAST"
+#token WEST "WEST"
 
-#token WHILE "\WHILE"
-#token FITS "\FITS"
-#token HEIGHT "\HEIGHT"
-#token AND "\AND"
+#token WHILE "WHILE"
+#token FITS "FITS"
+#token HEIGHT "HEIGHT"
+#token AND "AND"
 #token LESS "\<"
 #token MORE "\>"
 #token EQ "\="
@@ -144,40 +143,37 @@ int main() {
 #token DOT "\."
 #token LP "\("
 #token RP "\)"
-#token EQ "\="
 #token LC "\["
 #token RC "\]"
 
-#token BLOC "\B"
 
-#token DEF "\DEF"
-#token ENDEF "\ENDEF"
+#token DEF "DEF"
+#token ENDEF "ENDEF"
+
+#token ID "[a-zA-Z][a-zA-Z0-9]+"
 
 #token SPACE "[\ \n]" << zzskip();>>
 
 
-grid: GRID^ NUM NUM;
-bloc: BLOC NUM;
-pos: LP NUM DOT NUM RL;
+grid: GRID NUM NUM;
+
+pos: LP! NUM DOT! NUM RL!;
 dir: NORTH|SOUTH|EAST|WEST;
 
-place: bloc EQ^ PLACE pos^ AT! pos^;
-move: MOVE^ bloc dir NUM;
-pp: (pos|bloc) (PUSH|POP);
-instr: bloc EQ^ pp+ bloc;
+ids: ID ( EQ  ((PLACE pos AT! pos) | bloc) |  );
+move: MOVE^ ID dir NUM;
 
-ops: (grid|place|instr|move|heigh|ID)+;
+bloc: (ID|pos) ((PUSH|POP) bloc| );
 
-height: HEIGHT LP bloc RP;
-fits: FITS LP bloc DOT NUM DOT NUM DOT NUM RP; //FITS(B2.x.y.nivell)
+ops: (ids|move|height|bucle)*;
 
-cond: height|fits;
-bucle: WHILE LP cond RP LC ops RC;
+height: HEIGHT LP ID RP;
+fits: FITS LP ID DOT NUM DOT NUM DOT NUM RP;
 
+bucle: WHILE LP fits RP LC ops RC;
 
-def: DEF ID (bucle|ops)+ ENDEF;
-defs: def*;
+def: DEF ID ops ENDEF;
+defs: (def)*;
 
-
-lego: grid^ ops^ defs^ <<#0=createASTlist(_sibling);>>;
+lego: grid ops defs <<#0=createASTlist(_sibling);>>;
 //....
