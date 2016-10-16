@@ -5,6 +5,8 @@
 #include <map>
 using namespace std;
 
+
+
 // struct to store information about tokens
 typedef struct {
   string kind;
@@ -29,6 +31,7 @@ AST* createASTnode(Attrib* attr,int ttype, char *textt);
 
 //global structures
 AST *root;
+
 
 
 // function to fill token information
@@ -105,6 +108,88 @@ void ASTPrint(AST *a)
     a=a->right;
   }
 }
+
+
+
+
+/*////////////////////////////////////
+ * INTERPRETACIÓ DE L'ARBRE
+ */
+
+typedef struct{
+    int x, y;
+    int h,w;
+} bloc;
+
+typedef struct{
+    int n,m;
+    vector<vector<int> > altura;
+    map<string, bloc> blocs;
+} Graella;
+
+Graella g;
+
+map<string,AST*> funcions; //mapa de les funcions DEF 
+
+void inicialitzarGraella(int n, int m){
+    g.n = n;
+    g.m = m;
+    g.altura = vector<vector<int> > (n, vector<int> (g.m));
+}
+
+void processarDefinicions(AST *defs){
+    //recorrer tots els fills i guardar al map de funcions
+    AST *fill = child(defs,0);
+    for(int i = 0; fill!=NULL; ++i){
+        funcions.insert(fill);
+        //següent fill
+        fill = child(defs,i);
+    }
+    return;
+}
+
+void executarOperacions(AST *ops){
+    
+}
+
+void executeListInstrucctions(AST *a){
+    
+    //graella
+    AST *graella = child(a,0);
+    //operacions
+    AST *ops = child(a,1);
+    //definicions
+    AST *defs = child(a,2);
+    
+    //inicialitzar graella
+    int n = atoi(child(graella,0)->text);
+    int m = atoi(child(graella,1)->text);
+    inicialitzarGraella(n,m);
+    
+    processarDefinicions(defs);
+    
+    executarOperacions(ops);
+    
+    
+    //print?
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////
+
+
+
+
 
 
 
