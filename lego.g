@@ -117,6 +117,7 @@ void ASTPrint(AST *a)
  */
 
 typedef struct{
+    string id;
     int x, y;
     int h,w;
 } bloc;
@@ -137,6 +138,75 @@ void inicialitzarGraella(int n, int m){
     g.altura = vector<vector<int> > (n, vector<int> (g.m));
 }
 
+void push(bloc a, bloc b){
+    int cont = 0;
+    int alt = 1;
+
+    bool stop = false;
+    bool trobat = false;
+    
+    //recorrer tot el bloc b, on serà col·locat el bloc a
+    for(int j = b.y; j <= (b.y + b.h) and not trobat; ++j){
+        for(int i = b.x; i <= (b.x + b.w) and not trobat; ++i){
+            ++cont;
+            //si s'ha trobat espai horitzontal
+            if(cont == a.w and g.altura[i][j] == alt){
+                //mirar si hi cap el bloc senser
+                for(int k = i-(a.w -1); k <= i and not stop; ++k){
+                    for(int l = j; l < j+a.h and not stop; ++l){
+                        if(altura != alt) stop = true;
+                    }
+                }
+                //hi cap:
+                trobat == true;
+                //////////////////////////////que fer?????
+                
+            }
+            if(g.altura[i][j] != alt){
+                cont = 0;
+                alt = g.altura[i][j];
+            }
+            if(i == (b.x + b.w)) cont == 0;
+        }
+    }
+    
+    cout<<"ERROR no es pot fer aquest PUSH"<<endl;
+}
+
+void pop(bloc a, bloc b){
+    //arreglem l'altura
+    for(int i = a.x; i <= (a.x + a.w); ++i){
+        for(int j = a.y; j <=(a.y + a.h); ++j){
+            --g.altura[i][j];
+        }
+    }
+    //eliminem el bloc
+    g.blocs.erase(a.id);
+}
+
+bloc processarBloc(AST *a, string id){
+    bloc b;
+    if(a->kind ==  PLACE){
+        AST mida = child(a,0);
+        AST pos = child(b,1);
+        b.id = id;
+        b.w = child(mida,0);
+        b.h = child(mida,1);
+        b.x = child(pos,0);
+        b.y = child(pos,1);
+        return b;
+    }
+    else if(a->kind == "PUSH"){
+        //fer recursiu, pensar
+    }
+    else if(a->kind == "POP"{
+        //fer recursiu, pensar
+    }
+    
+    else cout<<"ERROR: no és un bloc a processar"<<endl;
+}
+
+
 void processarDefinicions(AST *defs){
     //recorrer tots els fills i guardar al map de funcions
     AST *fill = child(defs,0);
@@ -149,7 +219,51 @@ void processarDefinicions(AST *defs){
 }
 
 void executarOperacions(AST *ops){
-    
+    AST temp = child(ops,0);
+    while(temp != NULL){
+        
+        if(temp->kind == "="){
+            string id = child(temp,0)->text;
+            bloc b = processarBloc(child(temp,1), id);
+            g.blocs.insert(pair<id,b>);
+        }
+        else if (temp->kind == "MOVE"){
+            string id = child(temp,0)->text; //id del bloc a moure
+            string dir = child(temp,1)->kind; //direcció cap on moure'l
+            int mov = atoi(child(temp,2)->text); //quant s'ha de 
+            
+            if(dir == "NORTH"){
+                --(g.blocs.find(id)->second).y;
+            }
+            else if(dir == "SOUTH"){
+                ++(g.blocs.find(id)->second).y;
+            }
+            else if(dir == "EAST"){
+                ++(g.blocs.find(id)->second).x;
+            }
+            else if(dir == "WEST"){
+                --(g.blocs.find(id)->second).x;
+            }
+            else cout<<"ERROR: això no és una direcció"<<endl;
+        }
+        else if(temp->kind == "ID"){
+            //executar funcio
+            executarOperacions(funcions.find(temp->text)->second;
+        }            
+        else if(temp->kind == "WHILE"){
+            
+        }
+        else if(temp->kind == "HEIGHT"){
+            string id = child(temp,0);
+            
+        }
+            
+            
+        }
+        
+        //següent operacio
+        temp = temp->right;
+    }
 }
 
 void executeListInstrucctions(AST *a){
