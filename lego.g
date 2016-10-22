@@ -126,6 +126,7 @@ typedef struct{
     int n,m;
     vector<vector<int> > altura;
     map<string, bloc> blocs;
+   
 } Graella;
 
 Graella g;
@@ -135,16 +136,16 @@ map<string,AST*> funcions; //mapa de les funcions DEF
 void inicialitzarGraella(int n, int m){
     g.n = n;
     g.m = m;
-    g.altura = vector<vector<int> > (n, vector<int> (g.m));
+    g.altura = vector<vector<int> > (n, vector<int>(m));
+    
 }
 
-void push(bloc a, bloc b){
+bool fits(bloc a, bloc b){
     int cont = 0;
     int alt = 1;
 
     bool stop = false;
     bool trobat = false;
-    
     //recorrer tot el bloc b, on serà col·locat el bloc a
     for(int j = b.y; j <= (b.y + b.h) and not trobat; ++j){
         for(int i = b.x; i <= (b.x + b.w) and not trobat; ++i){
@@ -154,26 +155,74 @@ void push(bloc a, bloc b){
                 //mirar si hi cap el bloc senser
                 for(int k = i-(a.w -1); k <= i and not stop; ++k){
                     for(int l = j; l < j+a.h and not stop; ++l){
-                        if(altura != alt) stop = true;
+                        if(g.altura[k][l] != alt)stop = true;
                     }
                 }
-                //hi cap:
-                trobat == true;
-                //////////////////////////////que fer?????
-                
+                return true;
             }
-            if(g.altura[i][j] != alt){
+            if(g.altura[i][j] != alt){ //si l'altura és diferent
                 cont = 0;
                 alt = g.altura[i][j];
             }
-            if(i == (b.x + b.w)) cont == 0;
+            if(i == (b.x + b.w)) cont == 0; //si arriba a la vora dreta
         }
     }
-    
-    cout<<"ERROR no es pot fer aquest PUSH"<<endl;
+    return false;
 }
 
-void pop(bloc a, bloc b){
+bloc push(AST *a1, AST *a2){
+    
+    //crear bloc, o buscar si ja existeix
+    bloc a,b;
+    if(a1->kind == "list") a = processarBloc(a1,"no_id");
+    else a = (g.blocs.find(a1->text))->second;
+                               
+    if(a2->kind == "PUSH"){
+        b = push(child(a2,0),child(a2,1));
+    }
+    else if (a2->kind == "POP"){
+        b = pop(child(a2,0),child(a2,1));
+    }
+    else if(a2->kind == "ID"){
+        b = g.blocs.find(a2->text)->second;
+    }
+    
+    //si hi cap, col·locar-lo
+    if(fits(a,b)){
+        g.blocs.insert(pair<a.id,a>;
+        //modificar l'altura
+        for(int k = i-(a.w -1); k <= i and not stop; ++k){
+            for(int l = j; l < j+a.h and not stop; ++l){
+                ++g.altura[k][l];
+            }
+        }
+        cout << "OK: PUSH de "<<a.id<<" sobre "<<b.id<<endl
+        return b;
+    }
+    
+    cout<<"ERROR no es pot fer aquest PUSH"<<end;
+    return NULL;
+}
+
+bloc pop(AST *a1, AST *a2){
+    
+    
+    //crear bloc o buscar si ja existeix
+    bloc a,b;
+    
+    if(a1->kind == "list") a = processarBloc(a1,"no_id");
+    else a = (g.blocs.find(a1->text))->second;
+                               
+    if(a2->kind == "PUSH"){
+        b = push(child(a2,0),child(a2,1));
+    }
+    else if (a2->kind == "POP"){
+        b = pop(child(a2,0),child(a2,1));
+    }
+    else if(a2->kind == "ID"){
+        b = g.blocs.find(a2->text)->second;
+    }
+    
     //arreglem l'altura
     for(int i = a.x; i <= (a.x + a.w); ++i){
         for(int j = a.y; j <=(a.y + a.h); ++j){
@@ -182,6 +231,24 @@ void pop(bloc a, bloc b){
     }
     //eliminem el bloc
     g.blocs.erase(a.id);
+    cout << "OK: POP de "<<a.id<<" de "<<b.id<<endl;
+    return b;
+}
+
+void altura(int x, int y, int w, int h){
+    for(int i = x; i < x+w; ++i){
+        for(int j = y; j < y+h; ++j){
+            ++g.altura[i][j];
+        }
+    }
+}
+
+void id(int x, int y, int w, int h,string id,vector<vector<string> > id){
+    for(int i = x; i < x+w; ++i){
+        for(int j = y; j < y+h; ++j){
+            id[i][j] = id;
+        }
+    }
 }
 
 bloc processarBloc(AST *a, string id){
@@ -190,20 +257,37 @@ bloc processarBloc(AST *a, string id){
         AST mida = child(a,0);
         AST pos = child(b,1);
         b.id = id;
-        b.w = child(mida,0);
-        b.h = child(mida,1);
-        b.x = child(pos,0);
-        b.y = child(pos,1);
+        b.w = atoi(child(mida,0)->text);
+        b.h = atoi(child(mida,1)->text);
+        b.x = atoi(child(pos,0)->text);
+        b.y = atoi(child(pos,1)->text);
+        altura(x,y,w,h);
+        return b;
+        cout << "OK: PLACE de "<<b.id<<endl;
+    }
+    else if(a->kind == "list"){
+        bloc b;
+        b.w = child(a,0);
+        b.h = child(a,1);
+        b.x = b.y = 0;
+        b.id = id;
         return b;
     }
     else if(a->kind == "PUSH"){
-        //fer recursiu, pensar
+        AST *a = child(a,0);
+        AST *b = child(a,1);
+        bloc resultat = push(a,b);
+        return resultat;
     }
     else if(a->kind == "POP"{
-        //fer recursiu, pensar
+        AST *a = child(a,0);
+        AST *b = child(a,1)
+        bloc resultat = pop(a,b);
+        return resultat;
     }
     
-    else cout<<"ERROR: no és un bloc a processar"<<endl;
+    cout<<"ERROR: no és un bloc a processar"<<endl;
+    return NULL;}
 }
 
 
@@ -226,44 +310,78 @@ void executarOperacions(AST *ops){
             string id = child(temp,0)->text;
             bloc b = processarBloc(child(temp,1), id);
             g.blocs.insert(pair<id,b>);
+            cout <<"OK: assignació de "<<id<<endl;
         }
         else if (temp->kind == "MOVE"){
             string id = child(temp,0)->text; //id del bloc a moure
             string dir = child(temp,1)->kind; //direcció cap on moure'l
-            int mov = atoi(child(temp,2)->text); //quant s'ha de 
+            int mov = atoi(child(temp,2)->text); //quant s'ha de moure
             
             if(dir == "NORTH"){
-                --(g.blocs.find(id)->second).y;
+                (g.blocs.find(id)->second).y -= mov;;
             }
             else if(dir == "SOUTH"){
-                ++(g.blocs.find(id)->second).y;
+                (g.blocs.find(id)->second).y += mov;;
             }
             else if(dir == "EAST"){
-                ++(g.blocs.find(id)->second).x;
+                (g.blocs.find(id)->second).x += mov;
             }
             else if(dir == "WEST"){
-                --(g.blocs.find(id)->second).x;
+                (g.blocs.find(id)->second).x += mov;
             }
             else cout<<"ERROR: això no és una direcció"<<endl;
         }
         else if(temp->kind == "ID"){
             //executar funcio
-            executarOperacions(funcions.find(temp->text)->second;
+            executarOperacions(funcions.find(temp->text)->second);
         }            
         else if(temp->kind == "WHILE"){
-            
+            //TO-DO
         }
         else if(temp->kind == "HEIGHT"){
             string id = child(temp,0);
-            
+            bloc b = g.blocs.find(id)->second;
+            cout<<"L'altura de "<<id<< " és "<<g.altura[b.x][b.y]<<endl;
         }
             
+        else if(temp->kind == "FITS"){
+            bloc a,b;
+    
+            if(child(temp,0)->kind == "list") a = processarBloc(child(temp,0),"no_id");
+            else a = (g.blocs.find(child(temp,0)->text))->second;
+            
+            b = (g.blocs.find(child(temp,1)->text))->second;
+            
+            if(fits(a,b) cout << <"OK: Si que hi cap"<<endl;
             
         }
         
         //següent operacio
         temp = temp->right;
     }
+}
+
+void print(){
+    vector<vector<string> > id = vector<vector<string> > (n, vector<string>(m,"."));
+    for(it_type iterator = g.blocs.begin(); iterator != g.blocs.end(); iterator++) {
+        bloc b = iterator->second;
+        id(b.x,b.y,b.w,b.h,b.id,id);
+    }
+    
+    for(int j = 1; j<=m; ++j){
+        for(int i = 1; i<=n; ++i){
+            cout<<id[i][j];
+        }
+        cout<<endl;
+    }
+    cout<<endl<<endl;
+    for(int j = 1; j<=m; ++j){
+        for(int i = 1; i<=n; ++i){
+            cout<<g.altura[i][j];
+        }
+        cout<<endl;
+    }
+    
 }
 
 void executeListInstrucctions(AST *a){
@@ -284,8 +402,7 @@ void executeListInstrucctions(AST *a){
     
     executarOperacions(ops);
     
-    
-    //print?
+    print();
     
 }
 
