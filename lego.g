@@ -220,7 +220,8 @@ t_bloc processarBloc(AST *a, string id){
 
 bool fun_fits(t_bloc a, t_bloc b, int &x, int &y){
     int cont = 0;
-    int alt = 1;
+    int alt = g.altura[b.x][b.y];
+    d(alt);
 
     if((a.x > b.x) or (a.y > b.y)) return false;
     
@@ -233,14 +234,18 @@ bool fun_fits(t_bloc a, t_bloc b, int &x, int &y){
             //si s'ha trobat espai horitzontal
             if((a.w == 1) or (cont == a.w and g.altura[i][j] == alt) ){
                 //mirar si hi cap el bloc senser
+                alt = g.altura[i][j];
                 for(int k = i-(a.w -1); k <= i and not stop; ++k){
                     for(int l = j; l < j+a.h and not stop; ++l){
                         if(g.altura[k][l] != alt)stop = true;
                     }
                 }
-                x = i-(a.w -1);
-                y = j;
-                return true;
+                if(not stop){
+                    x = i-(a.w -1);
+                    y = j;
+                    return true;
+                }
+                stop = false;
             }
             if(g.altura[i][j] != alt){ //si l'altura és diferent
                 cont = 0;
@@ -257,6 +262,8 @@ t_bloc push(AST *a1, AST *a2){
     t_bloc a,b;
     if(a1->kind == "list") a = processarBloc(a1,"no_id");
     else a = (g.blocs.find(a1->text))->second;
+    
+    
                                
     if(a2->kind == "PUSH"){
         b = push(child(a2,0),child(a2,1));
@@ -276,7 +283,8 @@ t_bloc push(AST *a1, AST *a2){
         resta_altura(a.x,a.y,a.w,a.h);
         ((g.blocs.find(a1->text))->second).x = x;
         ((g.blocs.find(a1->text))->second).y = y;
-        a = (g.blocs.find(a1->text))->second;
+        a.x = x;
+        a.y = y;
         altura(a.x,a.y,a.w,a.h);
         //g.blocs.erase(a.id);
         cout << "OK: PUSH de "<<a.id<<" sobre "<<b.id<<endl;
