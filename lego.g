@@ -55,18 +55,29 @@ void altura(int x, int y, int w, int h);
 void id(int x, int y, int w, int h,string s_id,vector<vector<string> > vec_id);
 void processarDefinicions(AST *defs);
 
+void d(string s){
+    cout<<s<<endl;
+}
+
+void d(int s){
+    cout<<s<<endl;
+}
+
 
 
 // function to fill token information
 void zzcr_attr(Attrib *attr, int type, char *text) {
-/*  if (type == ID) {
-    attr->kind = "id";
+  if (type == ID) {
+    attr->kind = "ID";
     attr->text = text;
   }
-  else {*/
+  else if(type == NUM){
+    attr->kind = "NUM";
+    attr->text = text;
+  }
+  else {
     attr->kind = text;
-    attr->text = "";
-//  }
+    attr->text = text;}
 }
 
 // function to create a new AST node
@@ -159,8 +170,9 @@ t_bloc processarBloc(AST *a, string id){
         b.x = atoi((child(pos,0)->text).c_str());
         b.y = atoi((child(pos,1)->text).c_str());
         altura(b.x,b.y,b.w,b.h);
-        return b;
         cout << "OK: PLACE de "<<b.id<<endl;
+        return b;
+        
     }
     else if(a->kind == "list"){
         t_bloc b;
@@ -290,7 +302,8 @@ void altura(int x, int y, int w, int h){
     }
 }
 
-void id(int x, int y, int w, int h,string s_id,vector<vector<string> > vec_id){
+void f_id(int x, int y, int w, int h,string s_id,vector<vector<string> > &vec_id){
+
     for(int i = x; i < x+w; ++i){
         for(int j = y; j < y+h; ++j){
             vec_id[i][j] = s_id;
@@ -300,13 +313,22 @@ void id(int x, int y, int w, int h,string s_id,vector<vector<string> > vec_id){
 
 
 void processarDefinicions(AST *defs){
+
     //recorrer tots els fills i guardar al map de funcions
-    AST *fill = child(defs,0);
-    for(int i = 0; fill!=NULL; ++i){
-        funcions.insert(pair<string,AST*>(fill->text,fill));
-        //següent fill
-        fill = child(defs,i);
+
+    if(child(defs,0) != NULL){
+       
+        AST *fill = child(defs,0);
+        
+        for(int i = 0; fill!=NULL; ++i){
+            
+            funcions.insert(pair<string,AST*>(fill->text,fill));
+            
+            //següent fill
+            fill = child(defs,i);
+        }
     }
+
     return;
 }
 
@@ -315,11 +337,10 @@ void executarOperacions(AST *ops){
     while(temp != NULL){
         
         if(temp->kind == "="){
-            string id = child(temp,0)->text;
+            string id = (child(temp,0)->text).c_str();
             t_bloc b = processarBloc(child(temp,1), id);
             
             g.blocs.insert(pair<string,t_bloc>(id,b));
-            cout <<"OK: assignació de "<<id<<endl;
         }
         else if (temp->kind == "MOVE"){
             string id = (child(temp,0)->text).c_str(); //id del bloc a moure
@@ -348,7 +369,7 @@ void executarOperacions(AST *ops){
             //TO-DO
         }
         else if(temp->kind == "HEIGHT"){
-            string id = child(temp,0);
+            string id = (child(temp,0)->text).c_str();
             t_bloc b = g.blocs.find(id)->second;
             cout<<"L'altura de "<<id<< " és "<<g.altura[b.x][b.y]<<endl;
         }
@@ -361,7 +382,7 @@ void executarOperacions(AST *ops){
             
             b = (g.blocs.find(child(temp,1)->text))->second;
             
-            if(fun_fits(a,b) cout << <"OK: Si que hi cap"<<endl;
+            if(fun_fits(a,b)) cout <<"OK: Si que hi cap"<<endl;
             
         }
         
@@ -371,43 +392,64 @@ void executarOperacions(AST *ops){
 }
 
 void print(){
-    vector<vector<string> > id = vector<vector<string> > (n, vector<string>(m,"."));
-    for(it_type iterator = g.blocs.begin(); iterator != g.blocs.end(); iterator++) {
-        t_bloc b = iterator->second;
-        id(b.x,b.y,b.w,b.h,b.id,id);
+    d("entro print");
+    int n = g.n;
+    int m = g.m;
+    map<string,t_bloc>::iterator i;
+    vector<vector<string> > id = vector<vector<string> > (n, vector<string>(m,"[]"));
+    for(i = g.blocs.begin(); i != g.blocs.end(); i++) {
+        t_bloc b = i->second;
+        f_id(b.x,b.y,b.w,b.h,b.id,id);
     }
     
-    for(int j = 1; j<=m; ++j){
-        for(int i = 1; i<=n; ++i){
+    
+    for(int j = 0; j<m; ++j){
+        for(int i = 0; i<n; ++i){
             cout<<id[i][j];
         }
         cout<<endl;
     }
     cout<<endl<<endl;
-    for(int j = 1; j<=m; ++j){
-        for(int i = 1; i<=n; ++i){
+    for(int j = 0; j<g.altura.size(); ++j){
+        for(int i = 0; i<g.altura[j].size(); ++i){
             cout<<g.altura[i][j];
         }
         cout<<endl;
     }
-    
+    d("surto print");
 }
+
 
 void executeListInstrucctions(AST *a){
     
+    bool hi_ha_defs = false;
+    
     //graella
+    
     AST *graella = child(a,0);
     //operacions
-    AST *ops = child(a,1);
+    AST *ops;
+    if(child(a,1) != NULL){
+        ops = child(a,1);
+    }
     //definicions
-    AST *defs = child(a,2);
+    AST *defs;
+    if(child(a,2)!= NULL){
+        defs = child(a,2);
+        hi_ha_defs = true;
+    }
+    
+    
+    
     
     //inicialitzar graella
     int n = atoi((child(graella,0)->text).c_str());
     int m = atoi((child(graella,1)->text).c_str());
     inicialitzarGraella(n,m);
     
-    processarDefinicions(defs);
+    
+    if(hi_ha_defs) processarDefinicions(defs);
+    
     
     executarOperacions(ops);
     
@@ -437,6 +479,7 @@ int main() {
   root = NULL;
   ANTLR(lego(&root), stdin);
   ASTPrint(root);
+  executeListInstrucctions(root);
 }
 >>
 
@@ -484,7 +527,7 @@ grid: GRID^ NUM NUM;
 
 pos: LP! NUM DOT! NUM RP! <<#0=createASTlist(_sibling);>>;
 dir: NORTH|SOUTH|EAST|WEST;
-place: (PLACE^ pos AT pos);
+place: (PLACE^ pos AT! pos);
 ids: ID ( EQ^  ( place | bloc) |  ) ;
 move: MOVE^ ID dir NUM;
 
@@ -497,7 +540,7 @@ fits: FITS^ LP! ID DOT! NUM DOT! NUM DOT! NUM RP!;
 cond: fits|height;
 bucle: WHILE^ LP! cond RP! LC! ops RC!;
 
-def: DEF^ ID ops ENDEF;
+def: DEF^ ID ops ENDEF!;
 defs: (def)*;
 
 lego: grid ops defs <<#0=createASTlist(_sibling);>>;
