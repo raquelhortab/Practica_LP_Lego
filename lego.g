@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <map>
+#include <vector>
 using namespace std;
 
 
@@ -31,6 +32,28 @@ AST* createASTnode(Attrib* attr,int ttype, char *textt);
 
 //global structures
 AST *root;
+
+typedef struct{
+    string id;
+    int x, y;
+    int h,w;
+}t_bloc;
+
+typedef struct{
+    int n,m;
+    vector<vector<int> > altura;
+    map<string, t_bloc> blocs;
+}Graella;
+
+
+///declaració de funcions
+t_bloc processarBloc(AST *a, string id);
+bool fun_fits(t_bloc a, t_bloc b);
+t_bloc push(AST *a1, AST *a2);
+t_bloc pop(AST *a1, AST *a2);
+void altura(int x, int y, int w, int h);
+void id(int x, int y, int w, int h,string s_id,vector<vector<string> > vec_id);
+void processarDefinicions(AST *defs);
 
 
 
@@ -75,7 +98,6 @@ return c;
 }
 
 
-
 /// print AST, recursively, with indentation
 void ASTPrintIndent(AST *a,string s)
 {
@@ -100,8 +122,7 @@ void ASTPrintIndent(AST *a,string s)
 }
 
 /// print AST 
-void ASTPrint(AST *a)
-{
+void ASTPrint(AST *a){
   while (a!=NULL) {
     cout<<" ";
     ASTPrintIndent(a,"");
@@ -110,24 +131,11 @@ void ASTPrint(AST *a)
 }
 
 
-
-
 /*////////////////////////////////////
  * INTERPRETACIÓ DE L'ARBRE
  */
 
-typedef struct{
-    string id;
-    int x, y;
-    int h,w;
-} bloc;
 
-typedef struct{
-    int n,m;
-    vector<vector<int> > altura;
-    map<string, bloc> blocs;
-   
-} Graella;
 
 Graella g;
 
@@ -140,7 +148,48 @@ void inicialitzarGraella(int n, int m){
     
 }
 
-bool fits(bloc a, bloc b){
+t_bloc processarBloc(AST *a, string id){
+    t_bloc b;
+    if(a->kind ==  "PLACE"){
+        AST *mida = child(a,0);
+        AST *pos = child(a,1);
+        b.id = id;
+        b.w = atoi((child(mida,0)->text).c_str());
+        b.h = atoi((child(mida,1)->text).c_str());
+        b.x = atoi((child(pos,0)->text).c_str());
+        b.y = atoi((child(pos,1)->text).c_str());
+        altura(b.x,b.y,b.w,b.h);
+        return b;
+        cout << "OK: PLACE de "<<b.id<<endl;
+    }
+    else if(a->kind == "list"){
+        t_bloc b;
+        b.w = atoi((child(a,0)->text).c_str());;
+        b.h = atoi((child(a,1)->text).c_str());;
+        b.x = b.y = 0;
+        b.id = id;
+        return b;
+    }
+    else if(a->kind == "PUSH"){
+        AST *a = child(a,0);
+        AST *b = child(a,1);
+        t_bloc resultat = push(a,b);
+        return resultat;
+    }
+    else if(a->kind == "POP"){
+        AST *a = child(a,0);
+        AST *b = child(a,1);
+        t_bloc resultat = pop(a,b);
+        return resultat;
+    }
+    
+    cout<<"ERROR: no és un bloc a processar"<<endl;
+    t_bloc null;
+    null.id="NULL";
+    return null;
+}
+
+bool fun_fits(t_bloc a, t_bloc b){
     int cont = 0;
     int alt = 1;
 
@@ -170,10 +219,10 @@ bool fits(bloc a, bloc b){
     return false;
 }
 
-bloc push(AST *a1, AST *a2){
+t_bloc push(AST *a1, AST *a2){
     
     //crear bloc, o buscar si ja existeix
-    bloc a,b;
+    t_bloc a,b;
     if(a1->kind == "list") a = processarBloc(a1,"no_id");
     else a = (g.blocs.find(a1->text))->second;
                                
@@ -188,27 +237,25 @@ bloc push(AST *a1, AST *a2){
     }
     
     //si hi cap, col·locar-lo
-    if(fits(a,b)){
-        g.blocs.insert(pair<a.id,a>;
+    if(fun_fits(a,b)){
+        g.blocs.insert(pair<string,t_bloc>(a.id,a));
         //modificar l'altura
-        for(int k = i-(a.w -1); k <= i and not stop; ++k){
-            for(int l = j; l < j+a.h and not stop; ++l){
-                ++g.altura[k][l];
-            }
-        }
-        cout << "OK: PUSH de "<<a.id<<" sobre "<<b.id<<endl
+        altura(a.x,a.y,a.w,a.h);
+        cout << "OK: PUSH de "<<a.id<<" sobre "<<b.id<<endl;
         return b;
     }
     
-    cout<<"ERROR no es pot fer aquest PUSH"<<end;
-    return NULL;
+    cout<<"ERROR no es pot fer aquest PUSH"<<endl;
+    t_bloc null;
+    null.id = "NULL";
+    return null;
 }
 
-bloc pop(AST *a1, AST *a2){
+t_bloc pop(AST *a1, AST *a2){
     
     
     //crear bloc o buscar si ja existeix
-    bloc a,b;
+    t_bloc a,b;
     
     if(a1->kind == "list") a = processarBloc(a1,"no_id");
     else a = (g.blocs.find(a1->text))->second;
@@ -243,51 +290,12 @@ void altura(int x, int y, int w, int h){
     }
 }
 
-void id(int x, int y, int w, int h,string id,vector<vector<string> > id){
+void id(int x, int y, int w, int h,string s_id,vector<vector<string> > vec_id){
     for(int i = x; i < x+w; ++i){
         for(int j = y; j < y+h; ++j){
-            id[i][j] = id;
+            vec_id[i][j] = s_id;
         }
     }
-}
-
-bloc processarBloc(AST *a, string id){
-    bloc b;
-    if(a->kind ==  PLACE){
-        AST mida = child(a,0);
-        AST pos = child(b,1);
-        b.id = id;
-        b.w = atoi(child(mida,0)->text);
-        b.h = atoi(child(mida,1)->text);
-        b.x = atoi(child(pos,0)->text);
-        b.y = atoi(child(pos,1)->text);
-        altura(x,y,w,h);
-        return b;
-        cout << "OK: PLACE de "<<b.id<<endl;
-    }
-    else if(a->kind == "list"){
-        bloc b;
-        b.w = child(a,0);
-        b.h = child(a,1);
-        b.x = b.y = 0;
-        b.id = id;
-        return b;
-    }
-    else if(a->kind == "PUSH"){
-        AST *a = child(a,0);
-        AST *b = child(a,1);
-        bloc resultat = push(a,b);
-        return resultat;
-    }
-    else if(a->kind == "POP"{
-        AST *a = child(a,0);
-        AST *b = child(a,1)
-        bloc resultat = pop(a,b);
-        return resultat;
-    }
-    
-    cout<<"ERROR: no és un bloc a processar"<<endl;
-    return NULL;}
 }
 
 
@@ -295,7 +303,7 @@ void processarDefinicions(AST *defs){
     //recorrer tots els fills i guardar al map de funcions
     AST *fill = child(defs,0);
     for(int i = 0; fill!=NULL; ++i){
-        funcions.insert(fill);
+        funcions.insert(pair<string,AST*>(fill->text,fill));
         //següent fill
         fill = child(defs,i);
     }
@@ -303,19 +311,20 @@ void processarDefinicions(AST *defs){
 }
 
 void executarOperacions(AST *ops){
-    AST temp = child(ops,0);
+    AST *temp = child(ops,0);
     while(temp != NULL){
         
         if(temp->kind == "="){
             string id = child(temp,0)->text;
-            bloc b = processarBloc(child(temp,1), id);
-            g.blocs.insert(pair<id,b>);
+            t_bloc b = processarBloc(child(temp,1), id);
+            
+            g.blocs.insert(pair<string,t_bloc>(id,b));
             cout <<"OK: assignació de "<<id<<endl;
         }
         else if (temp->kind == "MOVE"){
-            string id = child(temp,0)->text; //id del bloc a moure
-            string dir = child(temp,1)->kind; //direcció cap on moure'l
-            int mov = atoi(child(temp,2)->text); //quant s'ha de moure
+            string id = (child(temp,0)->text).c_str(); //id del bloc a moure
+            string dir = (child(temp,1)->kind).c_str(); //direcció cap on moure'l
+            int mov = atoi((child(temp,2)->text).c_str()); //quant s'ha de moure
             
             if(dir == "NORTH"){
                 (g.blocs.find(id)->second).y -= mov;;
@@ -340,19 +349,19 @@ void executarOperacions(AST *ops){
         }
         else if(temp->kind == "HEIGHT"){
             string id = child(temp,0);
-            bloc b = g.blocs.find(id)->second;
+            t_bloc b = g.blocs.find(id)->second;
             cout<<"L'altura de "<<id<< " és "<<g.altura[b.x][b.y]<<endl;
         }
             
         else if(temp->kind == "FITS"){
-            bloc a,b;
+            t_bloc a,b;
     
             if(child(temp,0)->kind == "list") a = processarBloc(child(temp,0),"no_id");
             else a = (g.blocs.find(child(temp,0)->text))->second;
             
             b = (g.blocs.find(child(temp,1)->text))->second;
             
-            if(fits(a,b) cout << <"OK: Si que hi cap"<<endl;
+            if(fun_fits(a,b) cout << <"OK: Si que hi cap"<<endl;
             
         }
         
@@ -364,7 +373,7 @@ void executarOperacions(AST *ops){
 void print(){
     vector<vector<string> > id = vector<vector<string> > (n, vector<string>(m,"."));
     for(it_type iterator = g.blocs.begin(); iterator != g.blocs.end(); iterator++) {
-        bloc b = iterator->second;
+        t_bloc b = iterator->second;
         id(b.x,b.y,b.w,b.h,b.id,id);
     }
     
@@ -394,8 +403,8 @@ void executeListInstrucctions(AST *a){
     AST *defs = child(a,2);
     
     //inicialitzar graella
-    int n = atoi(child(graella,0)->text);
-    int m = atoi(child(graella,1)->text);
+    int n = atoi((child(graella,0)->text).c_str());
+    int m = atoi((child(graella,1)->text).c_str());
     inicialitzarGraella(n,m);
     
     processarDefinicions(defs);
