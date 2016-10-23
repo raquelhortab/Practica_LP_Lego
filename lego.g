@@ -221,7 +221,7 @@ t_bloc processarBloc(AST *a, string id){
 bool fun_fits(t_bloc a, t_bloc b, int &x, int &y){
     int cont = 0;
     int alt = g.altura[b.x][b.y];
-    d(alt);
+
 
     if((a.x > b.x) or (a.y > b.y)) return false;
     
@@ -252,6 +252,44 @@ bool fun_fits(t_bloc a, t_bloc b, int &x, int &y){
                 alt = g.altura[i][j];
             }
             if(i == (b.x + b.w)) cont == 0; //si arriba a la vora dreta
+        }
+    }
+    return false;
+}
+
+bool fun_fits2(t_bloc a, t_bloc b, int alt){
+    int cont = 0;
+
+
+    if((a.x > b.x) or (a.y > b.y)) return false;
+    
+    bool stop = false;
+    bool trobat = false;
+    //recorrer tot el bloc b, on serà col·locat el bloc a
+    for(int j = b.y; j <= (b.y + b.h) and not trobat; ++j){
+        for(int i = b.x; i <= (b.x + b.w) and not trobat; ++i){
+            ++cont;
+            //si s'ha trobat espai horitzontal
+           
+            if(g.altura[i][j] != alt){ //si l'altura és diferent
+                cont = 0;
+                alt = g.altura[i][j];
+            }
+            else if(i == (b.x + b.w)) cont == 0; //si arriba a la vora dreta
+            else if((a.w == 1) or (cont == a.w and g.altura[i][j] == alt) ){
+                //mirar si hi cap el bloc senser
+                
+                for(int k = i-(a.w -1); k <= i and not stop; ++k){
+                    for(int l = j; l < j+a.h and not stop; ++l){
+                        if(g.altura[k][l] != alt)stop = true;
+                    }
+                }
+                if(not stop){
+
+                    return true;
+                }
+                stop = false;
+            }
         }
     }
     return false;
@@ -418,14 +456,19 @@ void executarOperacions(AST *ops){
         }
             
         else if(temp->kind == "FITS"){
-            t_bloc a,b;
-    
-            if(child(temp,0)->kind == "list") a = processarBloc(child(temp,0),"no_id");
-            else a = (g.blocs.find(child(temp,0)->text))->second;
             
-            b = (g.blocs.find(child(temp,1)->text))->second;
-            int x,y;
-            if(fun_fits(a,b,x,y)) cout <<"OK: Si que hi cap"<<endl;
+            t_bloc objectiu = g.blocs.find(child(temp,0)->text)->second;
+            int w = atoi((child(temp,1)->text).c_str());
+            int h = atoi((child(temp,2)->text).c_str());
+            int a = atoi((child(temp,3)->text).c_str());
+            
+            t_bloc victima;
+            victima.w = w;
+            victima.h = h;
+            victima.id = "no_id";
+            
+            if(fun_fits2(victima,objectiu,a)) cout <<"SI QUE HI CAP"<<endl;
+            else cout<<"NO HI CAP"<<endl;
             
         }
         
@@ -600,10 +643,10 @@ move: MOVE^ ID dir NUM;
 
 bloc: (ID|pos) ((PUSH^|POP^) bloc| );
 
-ops: (ids|move|height|bucle)* <<#0=createASTlist(_sibling);>>;
+ops: (ids|move|height|fits|bucle)* <<#0=createASTlist(_sibling);>>;
 
 height: HEIGHT LP! ID RP!;
-fits: FITS^ LP! ID DOT! NUM DOT! NUM DOT! NUM RP!;
+fits: FITS^ LP! ID DOT! NUM DOT! NUM DOT! NUM RP! ;
 cond: fits|height;
 bucle: WHILE^ LP! cond RP! LC! ops RC!;
 
