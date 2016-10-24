@@ -38,6 +38,7 @@ typedef struct{
     string id;
     int x, y;
     int h,w;
+    int a;
 }t_bloc;
 
 typedef struct{
@@ -52,7 +53,7 @@ t_bloc processarBloc(AST *a, string id);
 bool fun_fits(t_bloc a, t_bloc b);
 t_bloc push(AST *a1, AST *a2);
 t_bloc pop(AST *a1, AST *a2);
-void altura(int x, int y, int w, int h);
+int altura(int x, int y, int w, int h);
 void id(int x, int y, int w, int h,string s_id,vector<vector<string> > vec_id);
 void processarDefinicions(AST *defs);
 
@@ -153,19 +154,21 @@ Graella g;
 
 map<string,AST*> funcions; //mapa de les funcions DEF 
 
-void altura(int x, int y, int w, int h){
+int altura(int x, int y, int w, int h){
     for(int i = x; i < x+w; ++i){
         for(int j = y; j < y+h; ++j){
             ++g.altura[i][j];
         }
     }
+    return g.altura[x][y];
 }
-void resta_altura(int x, int y, int w, int h){
+int resta_altura(int x, int y, int w, int h){
     for(int i = x; i < x+w; ++i){
         for(int j = y; j < y+h; ++j){
             --g.altura[i][j];
         }
     }
+    return g.altura[x][y];
 }
 
 
@@ -186,7 +189,7 @@ t_bloc processarBloc(AST *a, string id){
         b.h = atoi((child(mida,1)->text).c_str());
         b.x = atoi((child(pos,0)->text).c_str());
         b.y = atoi((child(pos,1)->text).c_str());
-        altura(b.x,b.y,b.w,b.h);
+        b.a=altura(b.x,b.y,b.w,b.h);
         cout << "OK: PLACE de "<<b.id<<endl;
         return b;
         
@@ -261,7 +264,7 @@ bool fun_fits2(t_bloc a, t_bloc b, int alt){
     int cont = 0;
 
 
-    if((a.x > b.x) or (a.y > b.y)) return false;
+    if((a.w > b.w) or (a.h > b.h)) return false;
     
     bool stop = false;
     bool trobat = false;
@@ -269,13 +272,14 @@ bool fun_fits2(t_bloc a, t_bloc b, int alt){
     for(int j = b.y; j <= (b.y + b.h) and not trobat; ++j){
         for(int i = b.x; i <= (b.x + b.w) and not trobat; ++i){
             ++cont;
-            //si s'ha trobat espai horitzontal
+            
            
             if(g.altura[i][j] != alt){ //si l'altura és diferent
                 cont = 0;
-                alt = g.altura[i][j];
+
             }
             else if(i == (b.x + b.w)) cont == 0; //si arriba a la vora dreta
+            //si s'ha trobat espai horitzontal
             else if((a.w == 1) or (cont == a.w and g.altura[i][j] == alt) ){
                 //mirar si hi cap el bloc senser
                 
@@ -318,9 +322,12 @@ t_bloc push(AST *a1, AST *a2){
     if(fun_fits(a,b,x,y)){
         //g.blocs.insert(pair<string,t_bloc>(a.id,a));
         //modificar l'altura
-        resta_altura(a.x,a.y,a.w,a.h);
+        if(a.id != "no_id") {
+            resta_altura(a.x,a.y,a.w,a.h);
+        }
         ((g.blocs.find(a1->text))->second).x = x;
         ((g.blocs.find(a1->text))->second).y = y;
+        ((g.blocs.find(a1->text))->second).a += (g.blocs.find(a2->text)->second).a;
         a.x = x;
         a.y = y;
         altura(a.x,a.y,a.w,a.h);
@@ -386,6 +393,64 @@ void processarDefinicions(AST *defs){
     return;
 }
 
+bool condicio(AST *cond){
+        if(cond->kind == "FITS"){
+            
+            t_bloc objectiu = g.blocs.find(child(cond,0)->text)->second;
+            int w = atoi((child(cond,1)->text).c_str());
+            int h = atoi((child(cond,2)->text).c_str());
+            int a = atoi((child(cond,3)->text).c_str());
+            
+            t_bloc victima;
+            victima.w = w;
+            victima.h = h;
+            victima.id = "no_id";
+
+            if(fun_fits2(victima,objectiu,a)) return true;
+            return false;
+        }
+        else if(cond->kind == ">"){
+            string id = (child(child(cond,0),0)->text).c_str(); //id bloc
+            int num = atoi((child(cond,1)->text).c_str()); //numero a comparar
+            t_bloc b = g.blocs.find(id)->second;
+            int alt = g.altura[b.x][b.y];
+            if(alt > num) return true;
+            return false;
+        }
+        else if(cond->kind == "<"){
+            string id = (child(child(cond,0),0)->text).c_str(); //id bloc
+            int num = atoi((child(cond,1)->text).c_str()); //numero a comparar
+            t_bloc b = g.blocs.find(id)->second;
+            int alt = g.altura[b.x][b.y];
+            if(alt < num) return true;
+            return false;
+        }
+        else if(cond->kind == ">="){
+            string id = (child(child(cond,0),0)->text).c_str(); //id bloc
+            int num = atoi((child(cond,1)->text).c_str()); //numero a comparar
+            t_bloc b = g.blocs.find(id)->second;
+            int alt = g.altura[b.x][b.y];
+            if(alt >= num) return true;
+            return false;
+        }
+        else if(cond->kind == "<="){
+            string id = (child(child(cond,0),0)->text).c_str(); //id bloc
+            int num = atoi((child(cond,1)->text).c_str()); //numero a comparar
+            t_bloc b = g.blocs.find(id)->second;
+            int alt = g.altura[b.x][b.y];
+            if(alt <= num) return true;
+            return false;
+        }
+        else if(cond->kind == "=="){
+                string id = (child(child(cond,0),0)->text).c_str(); //id bloc
+                int num = atoi((child(cond,1)->text).c_str()); //numero a comparar
+                t_bloc b = g.blocs.find(id)->second;
+                int alt = g.altura[b.x][b.y];
+                if(alt == num) return true;
+                return false;
+            }
+}
+
 void executarOperacions(AST *ops){
     AST *temp = child(ops,0);
     while(temp != NULL){
@@ -447,7 +512,30 @@ void executarOperacions(AST *ops){
             cout<<"FUNCIÓ: s'ha aplicat "<<temp->text<<endl;
         }            
         else if(temp->kind == "WHILE"){
-            //TO-DO
+            AST *cond = child(temp,0);
+            AST *oper = child(temp,1);
+            if(cond->kind == "AND"){
+                AST *fill = child(cond,0);
+                bool t = true;
+                while(fill != NULL and t){
+                    t = t and condicio(fill);
+                }
+                while(t){
+                    executarOperacions(oper);
+                    fill = child(cond,0);
+                    t = true;
+                    while(fill != NULL and t){
+                        t = t and condicio(fill);
+                    }
+                }
+            }
+            else {
+                bool b = condicio(cond);
+                while(b){
+                    executarOperacions(oper);
+                    b = condicio(cond);
+                }
+            }
         }
         else if(temp->kind == "HEIGHT"){
             string id = (child(temp,0)->text).c_str();
@@ -645,7 +733,7 @@ bloc: (ID|pos) ((PUSH^|POP^) bloc| );
 
 ops: (ids|move|height|fits|bucle)* <<#0=createASTlist(_sibling);>>;
 
-height: HEIGHT LP! ID RP!;
+height: HEIGHT^ LP! ID RP!;
 fits: FITS^ LP! ID DOT! NUM DOT! NUM DOT! NUM RP! ;
 cond: fits|height;
 bucle: WHILE^ LP! cond RP! LC! ops RC!;
