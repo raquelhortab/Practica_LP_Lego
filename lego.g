@@ -34,6 +34,8 @@ AST* createASTnode(Attrib* attr,int ttype, char *textt);
 //global structures
 AST *root;
 
+
+
 typedef struct{
     string id;
     int x, y;
@@ -48,6 +50,11 @@ typedef struct{
 }Graella;
 
 
+Graella g;
+
+map<string,AST*> funcions; //mapa de les funcions DEF 
+
+
 ///declaració de funcions
 t_bloc processarBloc(AST *a, string id);
 bool fun_fits(t_bloc a, t_bloc b);
@@ -56,6 +63,8 @@ t_bloc pop(AST *a1, AST *a2);
 int altura(int x, int y, int w, int h);
 void id(int x, int y, int w, int h,string s_id,vector<vector<string> > vec_id);
 void processarDefinicions(AST *defs);
+bool fun_fits(t_bloc a, t_bloc b, int alt);
+bool fun_fits(t_bloc b, int x, int y);
 
 void d(string s){
     cout<<s<<endl;
@@ -64,6 +73,7 @@ void d(string s){
 void d(int s){
     cout<<s<<endl;
 }
+
 
 
 
@@ -150,9 +160,7 @@ void ASTPrint(AST *a){
 
 
 
-Graella g;
 
-map<string,AST*> funcions; //mapa de les funcions DEF 
 
 int altura(int x, int y, int w, int h){
     for(int i = x; i < x+w; ++i){
@@ -179,6 +187,7 @@ void inicialitzarGraella(int n, int m){
     
 }
 
+
 t_bloc processarBloc(AST *a, string id){
     t_bloc b;
     if(a->kind ==  "PLACE"){
@@ -189,9 +198,17 @@ t_bloc processarBloc(AST *a, string id){
         b.h = atoi((child(mida,1)->text).c_str());
         b.x = atoi((child(pos,0)->text).c_str());
         b.y = atoi((child(pos,1)->text).c_str());
-        b.a=altura(b.x,b.y,b.w,b.h);
-        cout << "OK: PLACE de "<<b.id<<endl;
-        return b;
+        
+        if(fun_fits(b,(b.x),(b.y))){
+            b.a=altura(b.x,b.y,b.w,b.h);
+            cout << "OK: PLACE de "<<b.id<<endl;
+            return b;
+        }
+        else{
+            cout << "ERROR: no hi cap "<<b.id<<endl;
+            b.id = "ERROR";
+            return b;
+        }
         
     }
     else if(a->kind == "list"){
@@ -260,7 +277,7 @@ bool fun_fits(t_bloc a, t_bloc b, int &x, int &y){
     return false;
 }
 
-bool fun_fits2(t_bloc a, t_bloc b, int alt){
+bool fun_fits(t_bloc a, t_bloc b, int alt){
     int cont = 0;
 
 
@@ -297,6 +314,18 @@ bool fun_fits2(t_bloc a, t_bloc b, int alt){
         }
     }
     return false;
+}
+
+bool fun_fits(t_bloc b, int x, int y){
+    int alt = g.altura[x][y];
+    int w = b.w;
+    int h = b.h;
+    for(int i = x; i < x+b.w; ++i){
+        for(int j = y; j < y+b.h; ++j){
+            if(g.altura[i][j] != alt) return false;
+        }
+    }
+    return true;
 }
 
 t_bloc push(AST *a1, AST *a2){
@@ -371,10 +400,13 @@ t_bloc pop(AST *a1, AST *a2){
 
 
 void f_id(int x, int y, int w, int h,string s_id,vector<vector<string> > &vec_id){
-
+    t_bloc a = g.blocs.find(s_id)->second;
+    t_bloc b;
     for(int i = x; i < x+w; ++i){
         for(int j = y; j < y+h; ++j){
-            vec_id[i][j] = s_id;
+            b = g.blocs.find(vec_id[i][j])->second;
+            if(vec_id[i][j]=="[]") vec_id[i][j] = s_id;
+            else if(a.a > b.a) vec_id[i][j] = s_id;
         }
     }
 }
@@ -406,7 +438,7 @@ bool condicio(AST *cond){
             victima.h = h;
             victima.id = "no_id";
 
-            if(fun_fits2(victima,objectiu,a)) return true;
+            if(fun_fits(victima,objectiu,a)) return true;
             return false;
         }
         else if(cond->kind == ">"){
@@ -458,7 +490,7 @@ void executarOperacions(AST *ops){
         if(temp->kind == "="){
             string id = (child(temp,0)->text).c_str();
             t_bloc b = processarBloc(child(temp,1), id);
-            g.blocs.insert(pair<string,t_bloc>(id,b));
+            if(b.id != "ERROR")g.blocs.insert(pair<string,t_bloc>(id,b));
         }
         else if (temp->kind == "MOVE"){
             string id = (child(temp,0)->text).c_str(); //id del bloc a moure
@@ -555,7 +587,7 @@ void executarOperacions(AST *ops){
             victima.h = h;
             victima.id = "no_id";
             
-            if(fun_fits2(victima,objectiu,a)) cout <<"SI QUE HI CAP"<<endl;
+            if(fun_fits(victima,objectiu,a)) cout <<"SI QUE HI CAP"<<endl;
             else cout<<"NO HI CAP"<<endl;
             
         }
