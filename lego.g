@@ -122,8 +122,7 @@ return c;
 
 
 /// print AST, recursively, with indentation
-void ASTPrintIndent(AST *a,string s)
-{
+void ASTPrintIndent(AST *a,string s){
   if (a==NULL) return;
 
   cout<<a->kind;
@@ -154,14 +153,13 @@ void ASTPrint(AST *a){
 }
 
 
+
+
+
+
 /*////////////////////////////////////
- * INTERPRETACIÓ DE L'ARBRE
- */
-
-
-
-
-
+ *////////INTERPRETACIÓ DE L'ARBRE////
+ ////////////////////////////////////*
 int altura(int x, int y, int w, int h){
     for(int i = x; i < x+w; ++i){
         for(int j = y; j < y+h; ++j){
@@ -179,7 +177,7 @@ int resta_altura(int x, int y, int w, int h){
     return g.altura[x][y];
 }
 
-
+/*Inicialització de la graella*/
 void inicialitzarGraella(int n, int m){
     g.n = n;
     g.m = m;
@@ -187,7 +185,7 @@ void inicialitzarGraella(int n, int m){
     
 }
 
-
+/*S'encarrega d'interpretar la representació d'un bloc*/
 t_bloc processarBloc(AST *a, string id){
     t_bloc b;
     if(a->kind ==  "PLACE"){
@@ -238,6 +236,9 @@ t_bloc processarBloc(AST *a, string id){
     return null;
 }
 
+//FUNCIONS PER COMPROVAR SI UN BLOC CAP A CERTA POSICIÓ
+/*TRUE si el bloc a cap sobre el bloc b a qualsevol altura
+ * guarda a x i y la posició on cap del bloc b respecte la graella*/
 bool fun_fits(t_bloc a, t_bloc b, int &x, int &y){
     int cont = 0;
     int alt = g.altura[b.x][b.y];
@@ -276,7 +277,7 @@ bool fun_fits(t_bloc a, t_bloc b, int &x, int &y){
     }
     return false;
 }
-
+/*TRUE si el bloc a cap sobre el bloc b a una altura alt*/
 bool fun_fits(t_bloc a, t_bloc b, int alt){
     int cont = 0;
 
@@ -315,7 +316,7 @@ bool fun_fits(t_bloc a, t_bloc b, int alt){
     }
     return false;
 }
-
+/*TRUE si el bloc b cap a la posició (x,y)*/
 bool fun_fits(t_bloc b, int x, int y){
     int alt = g.altura[x][y];
     int w = b.w;
@@ -328,6 +329,10 @@ bool fun_fits(t_bloc b, int x, int y){
     return true;
 }
 
+
+
+/*Retorna el bloc resultant a fer PUSH del bloc representat per a1
+ * sobre del bloc representat per a2*/
 t_bloc push(AST *a1, AST *a2){
     //crear bloc, o buscar si ja existeix
     t_bloc a,b;
@@ -371,6 +376,8 @@ t_bloc push(AST *a1, AST *a2){
     return null;
 }
 
+/*Retorna el bloc resultant a fer POP del bloc representat per a1
+ * esta previament col·locat sobre el bloc representat per a2*/
 t_bloc pop(AST *a1, AST *a2){
     
     
@@ -398,7 +405,9 @@ t_bloc pop(AST *a1, AST *a2){
 }
 
 
-
+/*omple el vector vec_id, de mida igual a la graella, que representa
+ * per cada casella, l'id del bloc que hi ha col·locat,
+ * només es mostrarà el bloc de més a sobre*/
 void f_id(int x, int y, int w, int h,string s_id,vector<vector<string> > &vec_id){
     t_bloc a = g.blocs.find(s_id)->second;
     t_bloc b;
@@ -411,7 +420,8 @@ void f_id(int x, int y, int w, int h,string s_id,vector<vector<string> > &vec_id
     }
 }
 
-
+/*Guarda en un map<string,AST*> els nodes que son arrel de cada funcio definida
+ * la clau de cada element és el nom de la funció que guarda*/
 void processarDefinicions(AST *defs){
 
     //recorrer tots els fills i guardar al map de funcions
@@ -425,6 +435,7 @@ void processarDefinicions(AST *defs){
     return;
 }
 
+/*Processa les condicions dins del bucle while, retorna si es compleix o no*/
 bool condicio(AST *cond){
         if(cond->kind == "FITS"){
             
@@ -483,6 +494,8 @@ bool condicio(AST *cond){
             }
 }
 
+/*S'encarrega de gestionar i executarles diferents operacions 
+ *que es poden dur a terme*/
 void executarOperacions(AST *ops){
     AST *temp = child(ops,0);
     while(temp != NULL){
@@ -597,6 +610,9 @@ void executarOperacions(AST *ops){
     }
 }
 
+/*Funció encarregada de mostrar per pantalla la graella
+ * primer mostrara una matriu amb els ids dels blocs
+ * després mostra una matriu amb l'alçada a cada casella*/
 void print(){
     int n = g.n;
     int m = g.m;
@@ -605,13 +621,14 @@ void print(){
     
     for( int i = 0; i < id[0].size(); ++i){
         ostringstream oss;
-        oss<<i;
-        if(i<10) oss <<" ";
+        if(i<10) oss <<i<<" ";
+        else oss<<i;
         id[0][i] = oss.str();
     }
     for( int i = 0; i < id.size(); ++i){
         ostringstream oss;
-        oss<<i<<" ";
+        if(i<10) oss <<i<<" ";
+        else oss<<i;
         id[i][0] = oss.str();
     }
     
@@ -638,7 +655,14 @@ void print(){
         g.altura[i][0] = i;
     }
     
-    for(int j = 0; j<g.altura[0].size(); ++j){
+    cout<<" ";
+   for(int i = 0; i<g.altura.size(); ++i){
+       cout<<g.altura[i][0];
+       if(i<10) cout <<" ";
+       
+   }
+    cout<<endl;
+    for(int j = 1; j<g.altura[0].size(); ++j){
         for(int i = 0; i<g.altura.size(); ++i){
             cout<<g.altura[i][j]<<" ";
             if(i == 0 and j<10) cout <<" ";
